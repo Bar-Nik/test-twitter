@@ -1,5 +1,6 @@
 # Тестовый микросервис твитов
 
+```mermaid
 sequenceDiagram
     title Tweet Microservice Architecture (Core Functions Only)
 
@@ -100,3 +101,4 @@ sequenceDiagram
         TweetService-->>Gateway: 403 Forbidden
         Gateway-->>User: 403 Forbidden
     end
+```
