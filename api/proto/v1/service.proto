@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package api.proto.v1;
+
+option go_package = ".;pb";
+
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/code.proto";
+
+
+service TwitterAPI{
+    rpc CreateTweet(CreateTweetRequest) returns (CreateTweetResponse) {
+        option (google.api.http) = {
+            post: "/tweets",
+            body: "*"
+        };
+    };
+    rpc GetTweetByID(GetTweetByIDRequest) returns (GetTweetByIDResponse){
+        option (google.api.http) = {get: "/tweets/{id}"};
+    };
+    rpc GetUserTweets(GetUserTweetsRequest) returns (GetUserTweetsResponse){
+        option (google.api.http) = {get: "/users/{user_id}/tweets"};
+    };
+    rpc UpdateTweet(UpdateTweetRequest) returns (UpdateTweetResponse){
+        option (google.api.http) = {
+            put: "/tweets/{id}",
+            body: "*"
+        };
+    };
+    rpc DeleteTweet(DeleteTweetRequest) returns (DeleteTweetResponse){
+        option (google.api.http) = {delete: "/tweets/{id}"};
+    };
+    rpc GetSubscribersTweets(GetSubscribersTweetsRequest) returns (GetSubscribersTweetsResponse){
+        option (google.api.http) = {
+            post: "/tweets/users",
+            body: "*"
+        };
+    };
+}
+
+message CreateTweetRequest{
+    string text = 1 [(validate.rules).string = {
+        min_len: 1,
+        max_len: 250
+    }];
+}
+message CreateTweetResponse{
+    Tweet tweet = 1;
+}
+
+message GetTweetByIDRequest{
+    string id = 1 [(validate.rules).string = {uuid: true}];
+}
+message GetTweetByIDResponse{
+    Tweet tweet = 1;
+}
+
+message GetUserTweetsRequest{
+    string user_id = 1 [(validate.rules).string = {uuid: true}];
+}
+message GetUserTweetsResponse{
+    repeated Tweet tweets = 1;
+}
+
+message UpdateTweetRequest{
+    string id = 1 [(validate.rules).string = {uuid: true}];
+    string text = 2 [(validate.rules).string = {
+        min_len: 1,
+        max_len: 250
+    }];
+}
+message UpdateTweetResponse{
+    Tweet tweet = 1;
+}
+
+message DeleteTweetRequest{
+    string id = 1 [(validate.rules).string = {uuid: true}];
+}
+message DeleteTweetResponse{}
+
+message GetSubscribersTweetsRequest{
+    repeated string user_ids = 1;
+}
+message GetSubscribersTweetsResponse{
+    repeated Tweet tweets = 1;
+}
+
+message Tweet{
+    string id = 1 [(validate.rules).string = {uuid: true}];
+    string text = 2 [(validate.rules).string = {
+        min_len: 1,
+        max_len: 250
+    }];
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp updated_at = 4;
+    string user_id = 5 [(validate.rules).string = {uuid: true}];
+}

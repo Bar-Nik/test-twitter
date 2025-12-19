@@ -1,0 +1,79 @@
+volumes:
+  postgres:
+  redis_data:
+  rabbitmq_data:
+  rabbitmq_logs:
+
+services:
+
+  postgres:
+    image: postgres:16.1
+    container_name: "twitter_db"
+    restart: unless-stopped
+    volumes:
+      - "postgres:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_DB: "user_db"
+      POSTGRES_USER: "user_svc"
+      POSTGRES_PASSWORD: "user_pass"
+    ports:
+      - 5435:5432
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: "twitter_redis"
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: mysecurepassword
+      REDIS_PORT: 6379
+      REDIS_DATABASES: 16
+      REDIS_APPENDONLY: yes
+      REDIS_MAXMEMORY: 256mb
+      REDIS_MAXMEMORY_POLICY: allkeys-lru
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: "twitter_prometheus"
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: "twitter_grafana"
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: twitter-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP порт
+      - "15672:15672"  # Management UI порт
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
